@@ -36,7 +36,7 @@ function M.retrieve(is_math)
       "\\frac{\\mathrm{d/${1:V}}}{\\mathrm{d${2:x}}} $0"
     ),
 
-    parse_snippet({ trig = "pmat", name = "pmat" }, "\\begin{pmatrix} $1 \\end{pmatrix} $0"),
+    -- parse_snippet({ trig = "pmat", name = "pmat" }, "\\begin{pmatrix} $1 \\end{pmatrix} $0"),
 
     parse_snippet(
       { trig = "lr", name = "left( right)" },

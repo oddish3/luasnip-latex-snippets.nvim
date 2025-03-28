@@ -4,12 +4,23 @@ local i = ls.insert_node
 
 local M = {}
 
-function M.retrieve(not_math)
+function M.retrieve(condition_fn)
   local utils = require("luasnip-latex-snippets.util.utils")
   local pipe = utils.pipe
-
   local conds = require("luasnip.extras.expand_conditions")
-  local condition = pipe({ conds.line_begin, not_math })
+  
+  -- Check if we received is_math (for math mode) or not_math (for non-math mode)
+  local is_math_mode = type(condition_fn) == "function" and 
+                       debug.getinfo(condition_fn).name ~= "not_math"
+  
+  local condition
+  if is_math_mode then
+    -- Inside math mode condition
+    condition = pipe({ condition_fn })
+  else
+    -- Outside math mode condition
+    condition = pipe({ conds.line_begin, condition_fn })
+  end
 
   local parse_snippet = ls.extend_decorator.apply(ls.parser.parse_snippet, {
     condition = condition,
@@ -19,10 +30,11 @@ function M.retrieve(not_math)
     condition = condition,
   }) --[[@as function]]
 
-  return {
+  -- Basic snippets that work in both math and non-math
+  local snippets = {
     s(
       { trig = "ali", name = "Align" },
-      { t({ "\\begin{align*}", "\t" }), i(1), t({ "", ".\\end{align*}" }) }
+      { t({ "\\begin{align*}", "\t" }), i(1), t({ "", "\\end{align*}" }) }
     ),
 
     parse_snippet({ trig = "beg", name = "begin{} / end{}" }, "\\begin{$1}\n\t$0\n\\end{$1}"),
@@ -45,9 +57,11 @@ function M.retrieve(not_math)
       t(")"),
       t(" = "),
       i(0),
-      t({ "", ".\\end{align*}" }),
+      t({ "", "\\end{align*}" }),
     }),
   }
+
+  return snippets
 end
 
 return M
