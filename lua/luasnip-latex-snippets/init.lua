@@ -6,6 +6,35 @@ local default_opts = {
   ignore_code_blocks = true, -- New option to control code block detection
 }
 
+-- Expose utility functions to check context
+-- Check if cursor is in a code block
+M.is_in_code_block = function()
+  local utils = require("luasnip-latex-snippets.util.utils")
+  return utils.block_expansion()
+end
+
+-- Check if cursor is in a math zone
+M.is_in_math = function()
+  local utils = require("luasnip-latex-snippets.util.utils")
+  -- Use treesitter by default for this public API
+  return utils.is_math(true)
+end
+
+-- Get detailed context information
+M.get_context = function()
+  local utils = require("luasnip-latex-snippets.util.utils")
+  local ts_utils = require("luasnip-latex-snippets.util.ts_utils")
+  
+  return {
+    in_code_block = utils.block_expansion(),
+    in_math = utils.is_math(true),
+    in_text = utils.not_math(true),
+    ts_in_mathzone = ts_utils.in_mathzone(),
+    ts_in_text = ts_utils.in_text(),
+    ts_in_code_block = ts_utils.in_code_block()
+  }
+end
+
 M.setup = function(opts)
   opts = vim.tbl_deep_extend("force", default_opts, opts or {})
 
