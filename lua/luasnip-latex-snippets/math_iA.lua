@@ -10,6 +10,7 @@ function M.retrieve(is_math)
   local decorator = {
     wordTrig = false,
     condition = pipe({ is_math, no_backslash }),
+    show_condition = is_math -- Ensure it only shows in math mode
   }
 
   local parse_snippet = ls.extend_decorator.apply(ls.parser.parse_snippet, decorator) --[[@as function]]
