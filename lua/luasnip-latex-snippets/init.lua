@@ -161,9 +161,31 @@ M.setup_markdown = function()
   local is_math = utils.with_opts(utils.is_math, true)
   local not_math = utils.with_opts(utils.not_math, true)
 
+  -- Load all math-related snippets as regular snippets for completion
   local math_i = require("luasnip-latex-snippets/math_i").retrieve(is_math)
-  ls.add_snippets("markdown", math_i, { default_priority = 0 })
-  ls.add_snippets("quarto", math_i, { default_priority = 0 })
+  local math_iA = require("luasnip-latex-snippets/math_iA").retrieve(is_math)
+  local math_wrA = require("luasnip-latex-snippets/math_wrA").retrieve(is_math)
+  local math_iA_no_backslash = require("luasnip-latex-snippets/math_iA_no_backslash").retrieve(is_math)
+  local math_wA_no_backslash = require("luasnip-latex-snippets/math_wA_no_backslash").retrieve(is_math)
+  local math_rA_no_backslash = require("luasnip-latex-snippets/math_rA_no_backslash").retrieve(is_math)
+  local math_wRA_no_backslash = require("luasnip-latex-snippets/math_wRA_no_backslash").retrieve(is_math)
+  local greek_letters = require("luasnip-latex-snippets/greek_letters").retrieve(is_math)
+  local matrix_snippets = require("luasnip-latex-snippets/matrix").retrieve(is_math)
+  
+  -- Combine all math snippets
+  local all_math_snippets = vim.list_extend(math_i, {})
+  vim.list_extend(all_math_snippets, math_iA)
+  vim.list_extend(all_math_snippets, math_wrA)
+  vim.list_extend(all_math_snippets, math_iA_no_backslash)
+  vim.list_extend(all_math_snippets, math_wA_no_backslash)
+  vim.list_extend(all_math_snippets, math_rA_no_backslash)
+  vim.list_extend(all_math_snippets, math_wRA_no_backslash)
+  vim.list_extend(all_math_snippets, greek_letters)
+  vim.list_extend(all_math_snippets, matrix_snippets)
+  
+  -- Add all math snippets as regular snippets
+  ls.add_snippets("markdown", all_math_snippets, { default_priority = 0 })
+  ls.add_snippets("quarto", all_math_snippets, { default_priority = 0 })
 
   -- Add special math snippets
   local bwA_math_snippets = require("luasnip-latex-snippets.bwA").retrieve(is_math)
