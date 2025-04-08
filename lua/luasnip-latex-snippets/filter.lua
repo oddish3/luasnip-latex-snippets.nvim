@@ -117,7 +117,6 @@ M.setup = function()
       -- For non-registered snippets, use heuristics
       if
         not M.is_our_non_math_snippet(trigger, is_auto)
-        and latex_snippets.is_math_snippet(trigger, vim.bo.filetype)
       then
         return true -- Looks like a math snippet based on patterns
       end
@@ -177,24 +176,6 @@ M.setup = function()
     -- Get the snippet trigger/label
     local completion_item = entry:get_completion_item()
     local trigger = completion_item.label
-
-    -- Critical math snippets that should only appear in math context
-    local critical_math_snippets = {
-      "arcsin",
-      "arctan",
-      "arcsec",
-      "asin",
-      "atan",
-      "asec",
-      "set",
-      "fun",
-      "abs",
-    }
-
-    -- Block critical math snippets outside math
-    if not in_math and vim.tbl_contains(critical_math_snippets, trigger) then
-      return false
-    end
 
     -- Try to determine if this is an autosnippet or regular snippet
     local is_auto = false
@@ -258,20 +239,12 @@ M.setup = function()
     local is_our_snippet = is_our_math_snippet or is_our_non_math_snippet
 
     -- For third-party snippets, use pattern matching
-    local is_math_pattern = not is_our_snippet
-      and core_module.is_math_snippet(trigger, vim.bo.filetype)
-    local is_math_snippet = is_our_math_snippet or is_math_pattern
-
     -- Inside math zones:
     if in_math then
-      -- In math mode, ONLY allow math snippets
-      return is_math_snippet
     elseif in_code then
       -- Block all snippets in code blocks
       return false
     else
-      -- Outside math/code, don't show math snippets
-      return not is_math_snippet
     end
   end
 
@@ -295,29 +268,11 @@ M.setup = function()
     local completion_item = entry:get_completion_item()
     local trigger = completion_item.label
 
-    -- Block critical math snippets outside math
-    local critical_math_snippets = {
-      "arcsin",
-      "arctan",
-      "arcsec",
-      "asin",
-      "atan",
-      "asec",
-      "set",
-      "fun",
-      "abs",
-    }
-
-    if not in_math and vim.tbl_contains(critical_math_snippets, trigger) then
-      return false
-    end
-
     -- Use the filter implementation
     local result = filter_completion_impl(entry, ctx, latex_snippets)
 
     -- Extra safety check for math snippets outside math
     if not in_math then
-      local is_math_pattern = latex_snippets.is_math_snippet(trigger, vim.bo.filetype)
 
       -- Try to determine if it's an autosnippet
       local is_auto = false
@@ -337,9 +292,9 @@ M.setup = function()
       -- Check our registry
       local is_our_math_snippet = M.is_our_math_snippet(trigger, is_auto)
 
-      if result and (is_our_math_snippet or is_math_pattern) then
-        return false
-      end
+      -- if result and (is_our_math_snippet or is_math_pattern) then
+      --   return false
+      -- end
     end
 
     return result

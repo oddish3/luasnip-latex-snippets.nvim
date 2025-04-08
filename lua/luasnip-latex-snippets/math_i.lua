@@ -33,7 +33,7 @@ function M.retrieve(is_math)
 
     parse_snippet(
       { trig = "prod", name = "product" },
-      "\\prod_{${1:n}=${2:1}}}^{${3:\\infty}} ${4:${TM_SELECTED_TEXT}} $0"
+      "\\prod_{${1:n}=${2:1}}^{${3:\\infty}} ${4:${TM_SELECTED_TEXT}} $0"
     ),
 
     parse_snippet(
