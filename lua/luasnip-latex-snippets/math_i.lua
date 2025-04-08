@@ -3,6 +3,8 @@ local M = {}
 local ls = require("luasnip")
 local utils = require("luasnip-latex-snippets.util.utils")
 local pipe = utils.pipe
+local t = ls.text_node
+local i = ls.insert_node
 
 function M.retrieve(is_math)
   local parse_snippet = ls.extend_decorator.apply(ls.parser.parse_snippet, {
@@ -12,6 +14,13 @@ function M.retrieve(is_math)
   }) --[[@as function]]
 
   return {
+    -- parse_snippet({ trig = "beg", name = "begin{} / end{}" }, "\\begin{$1}\n\t$0\n\\end{$1}"),
+    -- parse_snippet({ trig = "case", name = "cases" }, "\\begin{cases}\n\t$1\n\\end{cases}"),
+    -- parse_snippet({ trig = "ali", name = "Align" }, "\\begin{align*}\n\t$1\n\\end{align*}"),
+    -- parse_snippet(
+    --   { trig = "bigfun", name = "Big function" },
+    --   "\\begin{align*}\n\t$1: $2&\\longrightarrow $3 \\\\\n\t$4&\\longmapsto $5($4) = $0\n\\end{align*}"
+    -- ),
     parse_snippet({ trig = "sum", name = "sum" }, "\\sum_{n=${1:1}}^{${2:\\infty}} ${3:a_n z^n}"),
 
     parse_snippet(
@@ -24,7 +33,7 @@ function M.retrieve(is_math)
 
     parse_snippet(
       { trig = "prod", name = "product" },
-      "\\prod_{${1:n=${2:1}}}^{${3:\\infty}} ${4:${TM_SELECTED_TEXT}} $0"
+      "\\prod_{${1:n}=${2:1}}}^{${3:\\infty}} ${4:${TM_SELECTED_TEXT}} $0"
     ),
 
     parse_snippet(

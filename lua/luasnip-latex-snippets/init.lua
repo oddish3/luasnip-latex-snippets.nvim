@@ -1,11 +1,15 @@
 local M = {}
 
 local default_opts = {
-	use_treesitter = false,
-	allow_on_markdown = true,
-	ignore_code_blocks = true, -- Option to control code block detection
-	register_all_snippets = false, -- Option to force registration of all snippets
-	preserve_jumps = true, -- Preserve tab jumping behavior even with filtering
+  use_treesitter = false,
+  allow_on_markdown = true,
+  ignore_code_blocks = true, -- Option to control code block detection
+  register_all_snippets = false, -- Option to force registration of all snippets
+  preserve_jumps = true, -- Preserve tab jumping behavior even with filtering
+
+  -- User-defined filter callbacks
+  custom_math_snippet_filter = nil, -- function(trigger, filetype) -> boolean
+  custom_code_snippet_filter = nil, -- function(trigger, filetype) -> boolean
 }
 
 -- Export the in_mathzone function as a global so user configs can use it
@@ -29,7 +33,6 @@ M.is_in_math = function()
 end
 
 -- Keep a registry of known snippets from our plugin
-local our_snippet_triggers = {}
 local math_snippet_registry = {}
 
 -- Helper for nvim-cmp to check if a snippet is a math snippet
@@ -37,6 +40,17 @@ M.is_math_snippet = function(trigger, filetype)
   -- First check our registry of known math snippets
   if math_snippet_registry[trigger] then
     return true
+  end
+
+  -- If user provided a custom filter, check it first
+  if
+    _G.__luasnip_latex_snippets_opts and _G.__luasnip_latex_snippets_opts.custom_math_snippet_filter
+  then
+    local user_result =
+      _G.__luasnip_latex_snippets_opts.custom_math_snippet_filter(trigger, filetype)
+    if user_result ~= nil then
+      return user_result
+    end
   end
 
   -- Common patterns for math snippets
@@ -85,6 +99,75 @@ M.is_math_snippet = function(trigger, filetype)
       or trigger == "NN"
       or trigger == "DD"
       or trigger == "HH"
+      or trigger == "set"
+      or trigger == "fun"
+      or trigger == "abs"
+      or trigger == "arcsin"
+      or trigger == "arctan"
+      or trigger == "arcsec"
+      or trigger == "asin"
+      or trigger == "atan"
+      or trigger == "asec"
+      or trigger == "..."
+      or trigger == "(varepsilon)"
+      or trigger == "(varphi)"
+      or trigger == "(varrho)"
+      or trigger == "(vartheta)"
+      or trigger == "(alpha)"
+      or trigger == "(Alpha)"
+      or trigger == "(beta)"
+      or trigger == "(Beta)"
+      or trigger == "(chi)"
+      or trigger == "(Chi)"
+      or trigger == "(delta)"
+      or trigger == "(Delta)"
+      or trigger == "(epsilon)"
+      or trigger == "(Epsilon)"
+      or trigger == "(gamma)"
+      or trigger == "(Gamma)"
+      or trigger == "(iota)"
+      or trigger == "(Iota)"
+      or trigger == "(kappa)"
+      or trigger == "(Kappa)"
+      or trigger == "(lambda)"
+      or trigger == "(Lambda)"
+      or trigger == "(mu)"
+      or trigger == "(Mu)"
+      or trigger == "(nu)"
+      or trigger == "(Nu)"
+      or trigger == "(omega)"
+      or trigger == "(Omega)"
+      or trigger == "(phi)"
+      or trigger == "(Phi)"
+      or trigger == "(pi)"
+      or trigger == "(Pi)"
+      or trigger == "(psi)"
+      or trigger == "(Psi)"
+      or trigger == "(rho)"
+      or trigger == "(Rho)"
+      or trigger == "(sigma)"
+      or trigger == "(Sigma)"
+      or trigger == "(tau)"
+      or trigger == "(Tau)"
+      or trigger == "(theta)"
+      or trigger == "(Theta)"
+      or trigger == "(zeta)"
+      or trigger == "(Zeta)"
+      or trigger == "(eta)"
+      or trigger == "(Eta)"
+      or trigger == "(sin)"
+      or trigger == "(cos)"
+      or trigger == "(tan)"
+      or trigger == "(csc)"
+      or trigger == "(sec)"
+      or trigger == "(cot)"
+      or trigger == "(ln)"
+      or trigger == "(log)"
+      or trigger == "(exp)"
+      or trigger == "(star)"
+      or trigger == "(perp)"
+      or trigger == "(int)"
+      or trigger == "(q?quad)"
     )
   then
     return true
@@ -105,155 +188,22 @@ end
 
 -- Function to register snippets as belonging to our plugin
 M.register_snippet = function(trigger, is_math)
-  our_snippet_triggers[trigger] = true
-  
-  -- If this is a math snippet, add it to the math registry
   if is_math then
     math_snippet_registry[trigger] = true
   end
+--   -- print(string.format("[DEBUG] Registering snippet: %s | is_math: %s", trigger, tostring(is_math)))
+  local friendly_filter = require("luasnip-latex-snippets.friendly_snippets_filter")
+  friendly_filter.register_snippet(trigger, is_math)
 end
 
--- Force register specific snippets we know should be included
-local function force_register_known_snippets()
-  -- Greek letters
-  local greek_prefixes = {"", "v"}
-  local greek_letters = {
-    "alpha", "beta", "gamma", "delta", "epsilon", "zeta", "eta", "theta",
-    "iota", "kappa", "lambda", "mu", "nu", "xi", "pi", "rho", "sigma", 
-    "tau", "upsilon", "phi", "chi", "psi", "omega"
-  }
-  
-  for _, prefix in ipairs(greek_prefixes) do
-    for _, letter in ipairs(greek_letters) do
-      local trigger = ";" .. prefix .. letter:sub(1, 1)
-      M.register_snippet(trigger, true)
-      -- Also register uppercase version
-      local upper_trigger = ";" .. prefix .. letter:sub(1, 1):upper()
-      M.register_snippet(upper_trigger, true)
-    end
-  end
-  
-  -- Common math decorators
-  local decorators = {"bar", "hat", "dot", "und", "ora", "ola"}
-  for _, dec in ipairs(decorators) do
-    M.register_snippet("a" .. dec, true)
-    M.register_snippet("b" .. dec, true)
-    M.register_snippet("x" .. dec, true)
-    M.register_snippet("y" .. dec, true)
-  end
-  
-  -- Common math operators
-  local operators = {"EE", "AA", "RR", "ZZ", "NN", "QQ", "DD", "HH", "ooo", "lll", "td", "rd", "cb", "sr"}
-  for _, op in ipairs(operators) do
-    M.register_snippet(op, true)
-  end
-  
-  -- Register begin/end snippets for bwA
-  M.register_snippet("ali", false)
-  M.register_snippet("beg", false)
-  M.register_snippet("case", false)
-  M.register_snippet("bigfun", false)
-end
-
--- Function to initialize snippet registry from our modules
-M.initialize_snippet_registry = function(opts)
-  opts = opts or _G.__luasnip_latex_snippets_opts or default_opts
-  
-  -- Clear existing registry
-  our_snippet_triggers = {}
-  math_snippet_registry = {}
-  
-  -- Get a list of triggers from all our snippet modules
-  local context_helper = require("luasnip-latex-snippets.util.context_helper")
-  local utils = require("luasnip-latex-snippets.util.utils")
-  local is_math = utils.with_opts(utils.is_math, opts.use_treesitter)
-  local not_math = utils.with_opts(utils.not_math, opts.use_treesitter)
-  
-  -- First register known snippets that we know should be registered
-  force_register_known_snippets()
-  
-  -- Get all math snippets
-  local all_snippets = context_helper.get_math_snippets_for_completion(is_math)
-  
-  -- Get snippets from all modules if forced registration is enabled
-  local modules = {
-    "math_i",
-    "math_iA",
-    "math_wrA",
-    "math_iA_no_backslash",
-    "math_wA_no_backslash",
-    "math_rA_no_backslash",
-    "math_wRA_no_backslash",
-    "greek_letters",
-    "matrix",
-    "wA",
-    "bwA",
-  }
-  
-  -- Register all snippet modules
-  for _, module_name in ipairs(modules) do
-    local ok, module = pcall(require, "luasnip-latex-snippets." .. module_name)
-    if ok then
-      -- Try to get snippets with both math and non-math conditions to register all
-      local snippets = {}
-      
-      -- Get snippets with math condition
-      pcall(function()
-        local math_snippets = module.retrieve(is_math)
-        vim.list_extend(snippets, math_snippets)
-        
-        -- Mark these as math snippets
-        for _, snippet in ipairs(math_snippets) do
-          if snippet.trigger then
-            M.register_snippet(snippet.trigger, true)
-          end
-        end
-      end)
-      
-      -- Also try with not_math condition for modules that support it
-      pcall(function()
-        local non_math_snippets = module.retrieve(not_math)
-        vim.list_extend(snippets, non_math_snippets)
-        
-        -- Register these as non-math snippets
-        for _, snippet in ipairs(non_math_snippets) do
-          if snippet.trigger then
-            M.register_snippet(snippet.trigger, false)
-          end
-        end
-      end)
-    end
-  end
-  
-  -- Register all snippet triggers from all_snippets as well
-  for _, snippet in ipairs(all_snippets) do
-    if snippet.trigger then
-      M.register_snippet(snippet.trigger, true)
-    end
-  end
-end
-
--- Function to filter completions for nvim-cmp
+-- Public filter_completion function that user configs will call
 M.filter_completion = function(entry, ctx)
-  local kind = entry:get_kind()
-  local is_snippet = kind == 15 -- kinds.Snippet = 15
-  
-  if not is_snippet then return true end
-  
-  local completion_item = entry:get_completion_item()
-  local trigger = completion_item.label
-  
-  -- Check if we're in a math zone
-  if M.is_in_math() then
-    -- In math zone, only show math snippets
-    return M.is_math_snippet(trigger, vim.bo.filetype)
-  elseif M.is_in_code_block() then
-    -- In code block, only show mk/dm type snippets
-    return trigger == "mk" or trigger == "dm" or trigger == "Mk" or trigger == "Dm"
-  else
-    -- Outside math/code, don't show math snippets
-    return not M.is_math_snippet(trigger, vim.bo.filetype)
-  end
+  -- Lazy load the filter module
+  local filter_module = require("luasnip-latex-snippets.friendly_snippets_filter")
+
+  -- Use the enhanced filter_completion from the filter module
+  -- This includes additional checks to prevent math snippets appearing outside math
+  return filter_module.filter_completion(entry, ctx)
 end
 
 -- Get detailed context information
@@ -283,31 +233,26 @@ M.setup = function(opts)
 
   -- Make options available globally for condition functions
   _G.__luasnip_latex_snippets_opts = opts
-  
-  -- Initialize our snippet registry for the filter_completion function
-  M.initialize_snippet_registry(opts)
-  
-  -- Also register all snippets with the friendly-snippets filter
-  local friendly_filter = require("luasnip-latex-snippets.friendly_snippets_filter")
-  for trigger, _ in pairs(our_snippet_triggers) do
-    friendly_filter.register_snippet(trigger)
-  end
-  
+
+  -- Clear existing registry
+  our_snippet_triggers = {}
+  math_snippet_registry = {}
+
   -- Set up the friendly snippets filter to prevent expansion and completion in math/code
   require("luasnip-latex-snippets.friendly_snippets_filter").setup()
 
   local augroup = vim.api.nvim_create_augroup("luasnip-latex-snippets", {})
-  vim.api.nvim_create_autocmd("FileType", {
-    pattern = "tex",
-    group = augroup,
-    once = true,
-    callback = function()
-      local utils = require("luasnip-latex-snippets.util.utils")
-      local is_math = utils.with_opts(utils.is_math, opts.use_treesitter)
-      local not_math = utils.with_opts(utils.not_math, opts.use_treesitter)
-      M.setup_tex(is_math, not_math)
-    end,
-  })
+  -- vim.api.nvim_create_autocmd("FileType", {
+  --   pattern = "tex",
+  --   group = augroup,
+  --   once = true,
+  --   callback = function()
+  --     local utils = require("luasnip-latex-snippets.util.utils")
+  --     local is_math = utils.with_opts(utils.is_math, opts.use_treesitter)
+  --     local not_math = utils.with_opts(utils.not_math, opts.use_treesitter)
+  --     M.setup_tex(is_math, not_math)
+  --   end,
+  -- })
 
   if opts.allow_on_markdown then
     vim.api.nvim_create_autocmd("FileType", {
@@ -324,100 +269,116 @@ end
 local _autosnippets = function(is_math, not_math)
   local autosnippets = {}
 
-  -- Math-related snippets
+  -- Math-related snippets - uncomment modules to test as autosnippets
+--   -- print("[DEBUG] Setting up autosnippets...")
   local math_modules = {
-    "math_wRA_no_backslash",
-    "math_rA_no_backslash",
-    "math_wA_no_backslash",
-    "math_iA_no_backslash",
-    "math_iA",
-    "math_wrA",
-    "greek_letters",
-    "matrix"
+    "math_i",
+    -- "math_iA",
+    -- "math_wrA",
+    -- "math_iA_no_backslash",
+    -- "math_wA_no_backslash",
+    -- "math_rA_no_backslash",
+    -- "math_wRA_no_backslash",
+    -- "greek_letters",
+    -- "bwA",
+    -- "matrix",
   }
 
+  if #math_modules > 0 then
+--     -- print("[DEBUG] Will try these modules as autosnippets: " .. table.concat(math_modules, ", "))
+  else
+--     -- print("[DEBUG] No math modules enabled for autosnippets")
+  end
+
   -- Load math snippets and mark them with context
-  for _, s in ipairs(math_modules) do
-    local snippets = require(("luasnip-latex-snippets.%s"):format(s)).retrieve(is_math)
-    -- Mark all snippets with math context for filtering
-    for _, snippet in ipairs(snippets) do
-      snippet.context = { math = true }
-      
-      -- Also make sure condition function is properly set
-      if not snippet.condition_func then
-        local utils = require("luasnip-latex-snippets.util.utils")
-        snippet.condition = function(line_to_cursor, matched_trigger, captures)
-          -- Only expand in math zones
-          return is_math() and not utils.block_expansion()
+  for _, module_name in ipairs(math_modules) do
+--     -- print("[DEBUG] Loading autosnippet module: " .. module_name)
+    local ok, module = pcall(require, "luasnip-latex-snippets." .. module_name)
+    if ok then
+--       -- print("[DEBUG] Successfully loaded autosnippet module: " .. module_name)
+      local snippets = module.retrieve(is_math)
+--       -- print("[DEBUG] Got " .. #snippets .. " autosnippets from " .. module_name)
+
+      -- Mark all snippets with math context for filtering
+      for _, snippet in ipairs(snippets) do
+        snippet.context = { math = true }
+
+        -- Also make sure condition function is properly set
+        if not snippet.condition_func then
+          local utils = require("luasnip-latex-snippets.util.utils")
+          snippet.condition = function(line_to_cursor, matched_trigger, captures)
+            -- Only expand in math zones
+            return is_math() and not utils.block_expansion()
+          end
         end
       end
+      vim.list_extend(autosnippets, snippets)
+    else
+--       print("[ERROR] Failed to load autosnippet module: " .. module_name)
+--       print("Error details: " .. tostring(module))
     end
-    vim.list_extend(autosnippets, snippets)
   end
 
   -- Regular snippets that can be in math or outside it
-  for _, s in ipairs({
-    "wA",
-    "bwA",
-  }) do
-    -- Math context
-    local math_snippets = require(("luasnip-latex-snippets.%s"):format(s)).retrieve(is_math)
-    for _, snippet in ipairs(math_snippets) do
-      snippet.context = { math = true }
-      
-      -- Also make sure condition function is properly set
-      if not snippet.condition_func then
-        local utils = require("luasnip-latex-snippets.util.utils")
-        snippet.condition = function(line_to_cursor, matched_trigger, captures)
-          -- Only expand in math zones
-          return is_math() and not utils.block_expansion()
-        end
-      end
-    end
-    vim.list_extend(autosnippets, math_snippets)
+  local autosnippets = {}
+--   print("--- Initializing snippet loading (Revised Logic) ---")
 
-    -- Non-math context (no need to mark these)
-    local non_math_snippets = require(("luasnip-latex-snippets.%s"):format(s)).retrieve(not_math)
-    for _, snippet in ipairs(non_math_snippets) do
-      -- Also make sure condition function is properly set
-      if not snippet.condition_func then
-        local utils = require("luasnip-latex-snippets.util.utils")
-        snippet.condition = function(line_to_cursor, matched_trigger, captures)
-          -- Only expand outside math zones and code blocks
-          return not_math() and not utils.block_expansion()
-        end
+  -- Define which sources provide snippets for which context
+  local math_sources = { "bwA" } -- Add other math-only sources here
+  -- local non_math_sources = { "wA" } -- Add other non-math sources here
+
+  -- Process Math Snippets
+--   print("\n--- Loading MATH snippets ---")
+  for _, source_name in ipairs(math_sources) do
+    local module_name = ("luasnip-latex-snippets.%s"):format(source_name)
+--     print(string.format("Processing source: %s (Context: is_math)", source_name))
+--     print("Attempting to require module:", module_name)
+    local success, module = pcall(require, module_name)
+
+    if not success or not module or not module.retrieve then
+      -- print(
+      --   string.format(
+      --     "ERROR: Failed to require or find retrieve function in module: %s - %s",
+      --     module_name,
+      --     module or "require failed"
+      --   )
+      -- )
+    else
+--       print("Successfully required module:", module_name)
+--       print("Retrieving snippets with is_math condition...")
+      -- Call retrieve ONCE, passing is_math. Conditions are now handled inside retrieve.
+      local retrieved_snippets = module.retrieve(is_math)
+--       print("Retrieved snippets count:", #retrieved_snippets)
+      -- Optional: Print triggers
+      for j, snippet in ipairs(retrieved_snippets) do
+        local trigger_str = snippet.trigger or "N/A"
+--         print(string.format("  Loaded math snippet #%d (Trigger: %s)", j, tostring(trigger_str)))
       end
+      vim.list_extend(autosnippets, retrieved_snippets)
+--       print("Current autosnippets count:", #autosnippets)
     end
-    vim.list_extend(autosnippets, non_math_snippets)
   end
 
+--   print("\n--- Snippet loading finished ---")
+--   print("Final autosnippets count:", #autosnippets)
   return autosnippets
 end
 
-M.setup_tex = function(is_math, not_math)
-  local ls = require("luasnip")
-  ls.add_snippets("tex", {
-    ls.parser.parse_snippet(
-      { trig = "pac", name = "Package" },
-      "\\usepackage[${1:options}]{${2:package}}$0"
-    ),
-
-    -- ls.parser.parse_snippet({ trig = "nn", name = "Tikz node" }, {
-    --   "$0",
-    --   -- "\\node[$5] (${1/[^0-9a-zA-Z]//g}${2}) ${3:at (${4:0,0}) }{$${1}$};",
-    --   "\\node[$5] (${1}${2}) ${3:at (${4:0,0}) }{$${1}$};",
-    -- }),
-  })
-
-  local math_i = require("luasnip-latex-snippets/math_i").retrieve(is_math)
-
-  ls.add_snippets("tex", math_i, { default_priority = 0 })
-
-  ls.add_snippets("tex", _autosnippets(is_math, not_math), {
-    type = "autosnippets",
-    default_priority = 0,
-  })
-end
+-- M.setup_tex = function(is_math, not_math)
+--   local ls = require("luasnip")
+--   ls.add_snippets("tex", {
+--     ls.parser.parse_snippet(
+--       { trig = "pac", name = "Package" },
+--       "\\usepackage[${1:options}]{${2:package}}$0"
+--     ),
+--
+--     -- ls.parser.parse_snippet({ trig = "nn", name = "Tikz node" }, {
+--     --   "$0",
+--     --   -- "\\node[$5] (${1/[^0-9a-zA-Z]//g}${2}) ${3:at (${4:0,0}) }{$${1}$};",
+--     --   "\\node[$5] (${1}${2}) ${3:at (${4:0,0}) }{$${1}$};",
+--     -- }),
+--   })
+-- end
 
 -- Add a LuaSnip condition that directly checks if we're in a code block
 local function create_code_block_condition()
@@ -440,7 +401,6 @@ end
 M.setup_markdown = function()
   local ls = require("luasnip")
   local utils = require("luasnip-latex-snippets.util.utils")
-  local context_helper = require("luasnip-latex-snippets.util.context_helper")
   local pipe = utils.pipe
 
   -- Register condition for code block detection
@@ -451,55 +411,136 @@ M.setup_markdown = function()
   local is_math = utils.with_opts(utils.is_math, true)
   local not_math = utils.with_opts(utils.not_math, true)
 
-  -- Get ALL math snippets from all modules for completions
-  local all_math_snippets = context_helper.get_math_snippets_for_completion(is_math)
+  -- Force treesitter-based math detection which is more reliable
+  _G.__luasnip_latex_snippets_opts = _G.__luasnip_latex_snippets_opts or {}
+  _G.__luasnip_latex_snippets_opts.use_treesitter = true
 
-  -- Add all math snippets as regular snippets to be available in completions
-  ls.add_snippets("markdown", all_math_snippets, { default_priority = 0 })
-  ls.add_snippets("quarto", all_math_snippets, { default_priority = 0 })
-  
-  -- Also specially add the bwA snippets
-  local bwA_snippets = require("luasnip-latex-snippets.bwA").retrieve(not_math)
-  ls.add_snippets("markdown", bwA_snippets, { default_priority = 0 })
-  ls.add_snippets("quarto", bwA_snippets, { default_priority = 0 })
+  -- Initialize tracker for loaded modules
+  _G.__loaded_snippet_modules = _G.__loaded_snippet_modules or {}
+
+  -- List all the modules you want to test here
+--   print("[DEBUG] Loading math snippet modules...")
+  local modules_to_test = {
+    -- "math_i",
+    -- "math_iA",
+    -- "math_wrA",
+    -- "math_iA_no_backslash",
+    -- "math_wA_no_backslash",
+    -- "math_rA_no_backslash",
+    -- "math_wRA_no_backslash",
+    -- "greek_letters",
+    -- "matrix",
+  }
+
+--   print("[DEBUG] Will try to load: " .. table.concat(modules_to_test, ", "))
+
+  -- Try loading each module and adding its snippets
+  for _, module_name in ipairs(modules_to_test) do
+    local ok, module = pcall(require, "luasnip-latex-snippets." .. module_name)
+    if ok then
+--       print("[DEBUG] Successfully loaded module: " .. module_name)
+
+      -- Mark this module as loaded
+      _G.__loaded_snippet_modules[module_name] = true
+
+      local snippets = module.retrieve(is_math)
+--       print("[DEBUG] Got " .. #snippets .. " snippets from " .. module_name)
+
+      -- Make sure the proper condition is set
+      for _, snippet in ipairs(snippets) do
+        -- Ensure snippets have consistent condition function that uses treesitter
+        snippet.condition = function()
+          return utils.is_math(true) and not utils.block_expansion()
+        end
+      end
+
+      -- Add these to both markdown and quarto files
+      ls.add_snippets("markdown", snippets, { default_priority = 0 })
+      ls.add_snippets("quarto", snippets, { default_priority = 0 })
+
+      -- Register each snippet with our filtering system
+      local count = 0
+      for _, snippet in ipairs(snippets) do
+        if snippet.trigger then
+          if count < 5 then -- Only print the first 5 to avoid flooding
+--             print(string.format("[DEBUG] Added snippet from %s: %s", module_name, snippet.trigger))
+            count = count + 1
+          end
+
+          M.register_snippet(snippet.trigger, true)
+        end
+      end
+--       print(string.format("[DEBUG] Registered %d snippets from %s", count, module_name))
+    else
+--       print("[ERROR] Failed to load module: " .. module_name)
+--       print("Error details: " .. tostring(module))
+    end
+  end
 
   -- First collect autosnippets with the regular pattern
   local autosnippets = _autosnippets(is_math, not_math)
-  local trigger_of_snip = function(s)
-    return s.trigger
-  end
+  -- local trigger_of_snip = function(s)
+  --   return s.trigger
+  -- end
 
   local to_filter = {}
-  for _, str in ipairs({
-    "wA",
-    "bwA",
-  }) do
-    local t = require(("luasnip-latex-snippets.%s"):format(str)).retrieve(not_math)
-    vim.list_extend(to_filter, vim.tbl_map(trigger_of_snip, t))
-  end
+  -- for _, str in ipairs({
+  --   "wA",
+  --    "bwA",
+  -- }) do
+  --   local t = require(("luasnip-latex-snippets.%s"):format(str)).retrieve(not_math)
+  --   vim.list_extend(to_filter, vim.tbl_map(trigger_of_snip, t))
+  -- end
 
   local filtered = vim.tbl_filter(function(s)
     return not vim.tbl_contains(to_filter, s.trigger)
   end, autosnippets)
 
-  local parse_snippet = ls.extend_decorator.apply(ls.parser.parse_snippet, {
-    condition = pipe({ not_math }),
-  }) --[[@as function]]
+  -- tex delimiters - these are special and should always be available
+  local normal_wA_tex = {}
 
-  -- tex delimiters
-  local normal_wA_tex = {
-    parse_snippet({ trig = "mk", name = "Math" }, "$${1:${TM_SELECTED_TEXT}}$"),
-    parse_snippet({ trig = "dm", name = "Block Math" }, "$$\n\t${1:${TM_SELECTED_TEXT}}\n$$"),
-    parse_snippet({ trig = "Mk", name = "Math" }, "$${1:${TM_SELECTED_TEXT}}$"),
-    parse_snippet({ trig = "Dm", name = "Block Math" }, "$$\n\t${1:${TM_SELECTED_TEXT}}\n$$"),
-  }
+  -- Ensure all math delimiter snippets are properly defined with code block prevention
+  normal_wA_tex[#normal_wA_tex + 1] = ls.snippet({
+    trig = "mk",
+    name = "Math",
+    snippetType = "autosnippet",
+    condition = function()
+      return not utils.block_expansion()
+    end,
+  }, { ls.text_node("$"), ls.insert_node(1), ls.text_node("$") })
+
+  normal_wA_tex[#normal_wA_tex + 1] = ls.snippet({
+    trig = "dm",
+    name = "Block Math",
+    snippetType = "autosnippet",
+    condition = function()
+      return not utils.block_expansion()
+    end,
+  }, { ls.text_node({ "$$", "\t" }), ls.insert_node(1), ls.text_node({ "", "$$" }) })
+
+  normal_wA_tex[#normal_wA_tex + 1] = ls.snippet({
+    trig = "Mk",
+    name = "Math",
+    snippetType = "autosnippet",
+    condition = function()
+      return not utils.block_expansion()
+    end,
+  }, { ls.text_node("$"), ls.insert_node(1), ls.text_node("$") })
+
+  normal_wA_tex[#normal_wA_tex + 1] = ls.snippet({
+    trig = "Dm",
+    name = "Block Math",
+    snippetType = "autosnippet",
+    condition = function()
+      return not utils.block_expansion()
+    end,
+  }, { ls.text_node({ "$$", "\t" }), ls.insert_node(1), ls.text_node({ "", "$$" }) })
   vim.list_extend(filtered, normal_wA_tex)
 
   -- Apply condition to each snippet to prevent code block expansion
   if _G.__luasnip_latex_snippets_opts and _G.__luasnip_latex_snippets_opts.ignore_code_blocks then
     for _, snippet in ipairs(filtered) do
       if not snippet.condition_func then
-        local utils = require("luasnip-latex-snippets.util.utils")
         snippet.condition = function(line_to_cursor, matched_trigger, captures)
           -- Block expansion in code blocks
           if utils.block_expansion() then
@@ -528,3 +569,4 @@ M.setup_markdown = function()
 end
 
 return M
+

@@ -21,10 +21,10 @@ local build_snippet = function(trig, node, match, priority, name)
     trig = trig(match),
     priority = priority,
   }, vim.deepcopy(node))
-  
+
   -- Mark this as a math snippet explicitly
   snippet.context = { math = true }
-  
+
   return snippet
 end
 
@@ -61,13 +61,13 @@ local snippets = {}
 function M.retrieve(is_math)
   -- Clear previous snippets
   snippets = {}
-  
+
   -- Make sure is_math is a function
   if type(is_math) ~= "function" then
     local utils = require("luasnip-latex-snippets.util.utils")
     is_math = utils.is_math
   end
-  
+
   local utils = require("luasnip-latex-snippets.util.utils")
   local no_backslash = utils.no_backslash
 

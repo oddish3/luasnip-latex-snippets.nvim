@@ -46,7 +46,7 @@ function M.retrieve(is_math)
     { trig = ";c", name = "chi", replace = "\\chi" },
     { trig = ";ps", name = "psi", replace = "\\psi" },
     { trig = ";o", name = "omega", replace = "\\omega" },
-    
+
     -- Uppercase Greek letters
     { trig = ";A", name = "Alpha", replace = "A" },
     { trig = ";B", name = "Beta", replace = "B" },
