@@ -11,9 +11,9 @@ local MATH_NODES = {
 }
 
 local TEXT_NODES = {
-    text_mode = true,
-    label_definition = true,
-    label_reference = true,
+  text_mode = true,
+  label_definition = true,
+  label_reference = true,
 }
 
 local CODE_BLOCK_NODES = { -- Add this to define code block node types
@@ -49,7 +49,9 @@ function M.in_text(check_parent)
     elseif MATH_NODES[node:type()] then
       return false
     end
-    return true
+    node = node:parent()
+  end
+  return true
 end
 
 -- Helper function to check if we're in a code block
