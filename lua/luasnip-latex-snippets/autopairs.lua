@@ -24,16 +24,16 @@ function M.retrieve(is_math)
     }),
 
     -- Square brackets
-    s({
-      trig = "[",
-      wordTrig = false,
-      condition = pipe({ is_math }),
-      show_condition = is_math,
-    }, {
-      t("["),
-      i(1),
-      t("]"),
-    }),
+    -- s({
+    --   trig = "[",
+    --   wordTrig = false,
+    --   condition = pipe({ is_math }),
+    --   show_condition = is_math,
+    -- }, {
+    --   t("["),
+    --   i(1),
+    --   t("]"),
+    -- }),
 
     -- Curly braces
     s({
@@ -60,16 +60,16 @@ function M.retrieve(is_math)
     }),
 
     -- Vertical bars (absolute value)
-    s({
-      trig = "|",
-      wordTrig = false,
-      condition = pipe({ is_math }),
-      show_condition = is_math,
-    }, {
-      t("\\left| "),
-      i(1),
-      t(" \\right|"),
-    }),
+    -- s({
+    --   trig = "|",
+    --   wordTrig = false,
+    --   condition = pipe({ is_math }),
+    --   show_condition = is_math,
+    -- }, {
+    --   t("\\left| "),
+    --   i(1),
+    --   t(" \\right|"),
+    -- }),
 
     -- Floor function
     s({
