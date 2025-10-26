@@ -10,6 +10,7 @@ function M.retrieve(is_math)
   local decorator = {
     wordTrig = false,
     condition = pipe({ is_math, no_backslash }),
+    show_condition = is_math, -- Ensure it only shows in math mode
   }
 
   local parse_snippet = ls.extend_decorator.apply(ls.parser.parse_snippet, decorator) --[[@as function]]
@@ -91,7 +92,7 @@ function M.retrieve(is_math)
     ),
 
     parse_snippet({ trig = "td", name = "to the ... power ^{}" }, "^{$1}$0 "),
-    parse_snippet({ trig = "rd", name = "to the ... power ^{()}" }, "^{($1)}$0 "),
+    parse_snippet({ trig = "rd", name = "to the ... power ^{()}" }, "^{$1}$0"),
     parse_snippet({ trig = "cb", name = "Cube ^3" }, "^3 "),
     parse_snippet({ trig = "sr", name = "Square ^2" }, "^2"),
 
@@ -112,16 +113,17 @@ function M.retrieve(is_math)
     parse_snippet({ trig = "cc", name = "subset" }, "\\subset "),
 
     parse_snippet({ trig = "<->", name = "leftrightarrow", priority = 200 }, "\\leftrightarrow"),
-    parse_snippet({ trig = "...", name = "ldots", priority = 100 }, "\\ldots "),
+    parse_snippet({ trig = "..", name = "ldots", priority = 100 }, "\\ldots "),
     parse_snippet({ trig = "!>", name = "mapsto" }, "\\mapsto "),
     parse_snippet({ trig = "iff", name = "iff" }, "\\iff"),
-    parse_snippet({ trig = "siff", name = "short iff", priority = 100}, "\\Leftrightarrow"),
+    parse_snippet({ trig = "siff", name = "short iff", priority = 100 }, "\\Leftrightarrow"),
     parse_snippet({ trig = "ooo", name = "\\infty" }, "\\infty"),
     parse_snippet({ trig = "rij", name = "mrij" }, "(${1:x}_${2:n})_{${3:$2}\\in${4:\\N}}$0"),
     parse_snippet({ trig = "nabl", name = "nabla" }, "\\nabla "),
     parse_snippet({ trig = "<!", name = "normal" }, "\\triangleleft "),
     parse_snippet({ trig = "floor", name = "floor" }, "\\left\\lfloor $1 \\right\\rfloor$0"),
     parse_snippet({ trig = "mcal", name = "mathcal" }, "\\mathcal{$1}$0"),
+    parse_snippet({ trig = "mbc", name = "mathbb" }, "\\mathbb{$1}$0"),
     parse_snippet({ trig = "//", name = "Fraction" }, "\\frac{$1}{$2}$0"),
     -- parse_snippet({ trig = "\\\\\\", name = "setminus" }, "\\setminus"),
     parse_snippet({ trig = "->", name = "to", priority = 100 }, "\\to "),
@@ -156,10 +158,10 @@ function M.retrieve(is_math)
     parse_snippet({ trig = "NN", name = "n" }, "\\mathbb{N}"),
     parse_snippet({ trig = "||", name = "mid" }, " \\mid "),
     parse_snippet({ trig = "Nn", name = "cap" }, "\\cap "),
-    parse_snippet({ trig = "bmat", name = "bmat" }, "\\begin{bmatrix} $1 \\end{bmatrix} $0"),
+    -- parse_snippet({ trig = "bmat", name = "bmat" }, "\\begin{bmatrix} $1 \\end{bmatrix} $0"),
     parse_snippet({ trig = "uuu", name = "bigcup" }, "\\bigcup_{${1:i \\in ${2: I}}} $0"),
     parse_snippet({ trig = "DD", name = "D" }, "\\mathbb{D}"),
-    parse_snippet({ trig = "HH", name = "H" }, "\\mathbb{H}"),
+    -- parse_snippet({ trig = "HH", name = "H" }, "\\mathbb{H}"),
     parse_snippet({ trig = "lll", name = "l" }, "\\ell"),
     parse_snippet(
       { trig = "dint", name = "integral", priority = 300 },
@@ -169,7 +171,7 @@ function M.retrieve(is_math)
     parse_snippet({ trig = "==", name = "equals" }, [[&= $1 \\\\]]),
     parse_snippet({ trig = "!=", name = "not equals" }, "\\neq "),
     parse_snippet({ trig = "compl", name = "complement" }, "^{c}"),
-    parse_snippet({ trig = "__", name = "subscript" }, "_{$1}$0"),
+    parse_snippet({ trig = "_", name = "subscript" }, "_{$1}$0"),
     parse_snippet({ trig = "=>", name = "implies" }, "\\implies"),
     parse_snippet({ trig = "simp", name = "short implies" }, "\\Rightarrow"),
     parse_snippet({ trig = "=<", name = "implied by" }, "\\impliedby"),

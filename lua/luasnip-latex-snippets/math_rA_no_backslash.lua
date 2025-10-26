@@ -15,11 +15,17 @@ local postfix_node = f(function(_, snip)
 end, {})
 
 local build_snippet = function(trig, node, match, priority, name)
-  return s({
+  -- Create the snippet
+  local snippet = s({
     name = name and name(match) or match,
     trig = trig(match),
     priority = priority,
   }, vim.deepcopy(node))
+
+  -- Mark this as a math snippet explicitly
+  snippet.context = { math = true }
+
+  return snippet
 end
 
 local build_with_priority = function(trig, node, priority, name)
@@ -53,22 +59,46 @@ end
 local snippets = {}
 
 function M.retrieve(is_math)
+  -- Clear previous snippets
+  snippets = {}
+
+  -- Make sure is_math is a function
+  if type(is_math) ~= "function" then
+    local utils = require("luasnip-latex-snippets.util.utils")
+    is_math = utils.is_math
+  end
+
   local utils = require("luasnip-latex-snippets.util.utils")
-  local pipe = utils.pipe
   local no_backslash = utils.no_backslash
 
+  -- This decorator will be applied to all snippets
   M.decorator = {
     wordTrig = true,
     trigEngine = "pattern",
-    condition = pipe({ is_math, no_backslash }),
+    -- The critical part: ensure this only works in math mode
+    condition = function(line_to_cursor, matched_trigger, captures)
+      return is_math() and no_backslash(line_to_cursor, matched_trigger)
+    end,
   }
 
+  -- Apply the decorator to snippets
   s = ls.extend_decorator.apply(ls.snippet, M.decorator) --[[@as function]]
 
+  -- Build the snippets
   vim.list_extend(snippets, vargreek_postfix_completions())
   vim.list_extend(snippets, greek_postfix_completions())
   vim.list_extend(snippets, postfix_completions())
   vim.list_extend(snippets, { build_snippet(postfix_trig, postfix_node, "q?quad", 200) })
+
+  -- Register all generated snippets with the init module for filtering
+  local init_module = require("luasnip-latex-snippets")
+  if init_module.register_snippet then
+    for _, snippet in ipairs(snippets) do
+      if snippet.trigger then
+        init_module.register_snippet(snippet.trigger, true) -- Mark as math snippets
+      end
+    end
+  end
 
   return snippets
 end
