@@ -181,6 +181,25 @@ M.comment = function()
   return vim.fn["vimtex#syntax#in_comment"]() == 1
 end
 
+M.in_text_command = function()
+  local ts_utils = require("luasnip-latex-snippets.util.ts_utils")
+
+  -- Loose text detection will be true inside \text{} as well as regular text
+  local in_loose_text = ts_utils.in_text(false)
+  if not in_loose_text then
+    return false
+  end
+
+  -- Strict text detection (with parent check) is false inside \text{} regions
+  local in_strict_text = ts_utils.in_text(true)
+
+  if in_loose_text and not in_strict_text then
+    return ts_utils.in_mathzone()
+  end
+
+  return false
+end
+
 M.env = function(name)
   local x, y = unpack(vim.fn["vimtex#env#is_inside"](name))
   return x ~= "0" and y ~= "0"

@@ -77,7 +77,7 @@ function M.retrieve(is_math)
   for _, letter in ipairs(greek_letters) do
     table.insert(
       snippets,
-      parse_snippet({ trig = letter.trig, name = letter.name }, letter.replace .. " ")
+      parse_snippet({ trig = letter.trig, name = letter.name }, letter.replace .. "$0")
     )
   end
 

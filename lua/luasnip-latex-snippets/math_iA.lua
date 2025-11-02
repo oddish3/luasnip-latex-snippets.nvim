@@ -92,6 +92,7 @@ function M.retrieve(is_math)
     ),
 
     parse_snippet({ trig = "td", name = "to the ... power ^{}" }, "^{$1}$0 "),
+    parse_snippet({ trig = "tq", name = "text input" }, "\\text{$1} $0 "),
     parse_snippet({ trig = "rd", name = "to the ... power ^{()}" }, "^{$1}$0"),
     parse_snippet({ trig = "cb", name = "Cube ^3" }, "^3 "),
     parse_snippet({ trig = "sr", name = "Square ^2" }, "^2"),

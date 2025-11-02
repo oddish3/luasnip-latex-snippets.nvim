@@ -39,6 +39,8 @@ use {
 {
   use_treesitter = false, -- whether to use treesitter to determine if cursor is in math mode; if false, vimtex is used
   allow_on_markdown = true, -- whether to add snippets to markdown filetype
+  block_markdown_text_snippets_in_math = false, -- prevent non-math snippets inside math zones for markdown/quarto
+  disable_math_snippets_in_text_commands = false, -- block math snippets inside \text{} while still in math mode
 }
 ```
 

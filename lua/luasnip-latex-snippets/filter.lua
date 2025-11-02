@@ -56,6 +56,17 @@ M.setup = function()
     -- Get current context
     local in_math = latex_snippets.is_in_math()
     local in_code = latex_snippets.is_in_code_block()
+    local opts = _G.__luasnip_latex_snippets_opts or {}
+    local utils = require("luasnip-latex-snippets.util.utils")
+
+    local ft = vim.bo.filetype
+    local in_text_command = false
+    if opts.disable_math_snippets_in_text_commands then
+      in_text_command = utils.in_text_command()
+    end
+
+    local block_markdown_text_in_math = opts.block_markdown_text_snippets_in_math
+      and (ft == "markdown" or ft == "quarto" or ft == "rmd")
 
     -- If not in math or code blocks, allow all
     if not (in_math or in_code) then
@@ -86,6 +97,8 @@ M.setup = function()
       return false
     end
 
+    local snippet_is_math = snippet and snippet.context and snippet.context.math
+
     -- SPECIAL HANDLING FOR CUSTOM SNIPPETS
     -- Check if this is a LuaSnip snippet instance (not just a string)
     if snippet and type(snippet) == "table" and snippet.condition then
@@ -109,9 +122,24 @@ M.setup = function()
 
     -- In math zone
     if in_math then
+      if
+        in_text_command
+        and (snippet_is_math or M.is_our_math_snippet(trigger, is_auto))
+      then
+        return false
+      end
+
       -- Check if this is a registered math snippet
       if M.is_our_math_snippet(trigger, is_auto) then
         return true -- Our registered math snippets are allowed in math
+      end
+
+      if snippet_is_math then
+        return true
+      end
+
+      if block_markdown_text_in_math then
+        return false
       end
 
       -- For non-registered snippets, use heuristics
@@ -172,6 +200,15 @@ M.setup = function()
     -- Get context information
     local in_math = core_module.is_in_math()
     local in_code = core_module.is_in_code_block()
+    local opts = _G.__luasnip_latex_snippets_opts or {}
+    local utils = require("luasnip-latex-snippets.util.utils")
+    local ft = vim.bo.filetype
+    local in_text_command = false
+    if opts.disable_math_snippets_in_text_commands then
+      in_text_command = utils.in_text_command()
+    end
+    local block_markdown_text_in_math = opts.block_markdown_text_snippets_in_math
+      and (ft == "markdown" or ft == "quarto" or ft == "rmd")
 
     -- Get the snippet trigger/label
     local completion_item = entry:get_completion_item()
@@ -217,7 +254,13 @@ M.setup = function()
     if snippet_obj then
       -- First check for explicit context property
       if snippet_obj.context and snippet_obj.context.math then
-        return in_math -- Only show in math
+        if in_math then
+          if in_text_command then
+            return false
+          end
+          return true
+        end
+        return false
       end
 
       -- Check condition as fallback
@@ -226,6 +269,9 @@ M.setup = function()
 
         -- Check if it has a math condition
         if condition_str:match("in_mathzone") or condition_str:match("is_math") then
+          if in_math and in_text_command then
+            return false
+          end
           return in_math -- Only show in math
         elseif condition_str:match("not_math") or condition_str:match("in_text") then
           return not in_math -- Only show outside math
@@ -236,15 +282,33 @@ M.setup = function()
     -- Get info from our registry
     local is_our_math_snippet = M.is_our_math_snippet(trigger, is_auto)
     local is_our_non_math_snippet = M.is_our_non_math_snippet(trigger, is_auto)
-    local is_our_snippet = is_our_math_snippet or is_our_non_math_snippet
+    local snippet_is_math = snippet_obj and snippet_obj.context and snippet_obj.context.math
 
     -- For third-party snippets, use pattern matching
     -- Inside math zones:
     if in_math then
+      if in_text_command and (snippet_is_math or is_our_math_snippet) then
+        return false
+      end
+
+      if snippet_is_math or is_our_math_snippet then
+        return true
+      end
+
+      if block_markdown_text_in_math then
+        return false
+      end
+
+      if is_our_non_math_snippet then
+        return false
+      end
+
+      return true
     elseif in_code then
       -- Block all snippets in code blocks
       return false
     else
+      return true
     end
   end
 
@@ -325,4 +389,3 @@ M.setup = function()
 end
 
 return M
-

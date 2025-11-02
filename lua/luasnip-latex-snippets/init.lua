@@ -6,9 +6,39 @@ local default_opts = {
   ignore_code_blocks = true,
   register_all_snippets = false,
   preserve_jumps = true,
-  
+
+  block_markdown_text_snippets_in_math = false,
+  disable_math_snippets_in_text_commands = false,
+
   custom_math_snippet_filter = nil,
   custom_code_snippet_filter = nil,
+
+  math_textobjects = {
+    enabled = true,
+    inside = "im",
+    around = "am",
+  },
+
+  math_surrounds = {
+    enabled = true,
+    mappings = {
+      ["<leader>m("] = {
+        open = "\\left(",
+        close = "\\right)",
+        desc = "Wrap with \\left( ... \\right)",
+      },
+      ["<leader>m["] = {
+        open = "\\left[",
+        close = "\\right]",
+        desc = "Wrap with \\left[ ... \\right]",
+      },
+      ["<leader>m{"] = {
+        open = "\\left\\{",
+        close = "\\right\\}",
+        desc = "Wrap with \\left\\{ ... \\right\\}",
+      },
+    },
+  },
 }
 
 _G.in_mathzone = function()
@@ -54,10 +84,12 @@ M.setup = function(opts)
   })
   
   _G.__luasnip_latex_snippets_opts = opts
-  
+
   our_snippet_triggers = {}
   math_snippet_registry = {}
-  
+
+  require("luasnip-latex-snippets.textobjects").setup(opts)
+
   require("luasnip-latex-snippets.filter").setup()
   
   local augroup = vim.api.nvim_create_augroup("luasnip-latex-snippets", {})
