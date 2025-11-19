@@ -48,16 +48,16 @@ function M.retrieve(is_math)
     }),
 
     -- Angle brackets
-    s({
-      trig = "<",
-      wordTrig = false,
-      condition = pipe({ is_math }),
-      show_condition = is_math,
-    }, {
-      t("\\langle "),
-      i(1),
-      t(" \\rangle"),
-    }),
+    -- s({
+    --   trig = "<",
+    --   wordTrig = false,
+    --   condition = pipe({ is_math }),
+    --   show_condition = is_math,
+    -- }, {
+    --   t("\\langle "),
+    --   i(1),
+    --   t(" \\rangle"),
+    -- }),
 
     -- Vertical bars (absolute value)
     -- s({

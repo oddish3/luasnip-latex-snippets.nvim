@@ -227,7 +227,7 @@ local function check_markdown_math_manually()
   }
 
   for _, pattern in ipairs(math_environments) do
-    for s, e in buffer_text:gmatch("()(" .. pattern .. ")()") do
+    for s, match, e in buffer_text:gmatch("()(" .. pattern .. ")()") do
       if s <= #buffer_text and e <= #buffer_text then
         -- Check if current position is in this environment
         -- Need to adjust for the relative position in the buffer text
